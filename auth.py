@@ -1,12 +1,18 @@
-from flask import Flask, session, redirect, request, render_template
+from flask import *
 import requests
 
+# 카카오 API 설정
+REST_API_KEY = "d37e3286aa4a1b7e3a2c084309f70d72"
+REDIRECT_URI = "http://127.0.0.1:8000/auth/kakaoLoginLogicRedirect"
+
 app = Flask(__name__)
-app.secret_key='1234'
+app.secret_key = '1234'
 
-auth_bp = Blueprint('auth', __name__)
+# 블루프린트 생성
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-@app.route("/auth", methods=["GET"])
+# 카카오 로그인 메인 페이지
+@auth_bp.route("/", methods=["GET"])
 def kakaologin():
     access_token = session.get("access_token")
 
@@ -15,11 +21,12 @@ def kakaologin():
             "https://kapi.kakao.com/v2/user/me",
             headers={"Authorization": f"Bearer {access_token}"}
         ).json()
+        return f"안녕하세요, {account_info.get('properties', {}).get('nickname', 'Guest')}님!"
 
     return render_template("auth.html")
 
-
-@app.route("/kakaoLoginLogic", methods=["GET"])
+# 카카오 로그인 로직
+@auth_bp.route("/kakaoLoginLogic", methods=["GET"])
 def kakaoLoginLogic():
     url = (
         f"https://kauth.kakao.com/oauth/authorize"
@@ -30,7 +37,7 @@ def kakaoLoginLogic():
     return redirect(url)
 
 # 카카오 로그인 리다이렉트 처리
-@app.route("/kakaoLoginLogicRedirect", methods=["GET"])
+@auth_bp.route("/kakaoLoginLogicRedirect", methods=["GET"])
 def kakaoLoginLogicRedirect():
     code = request.args.get("code")
     if not code:
@@ -53,21 +60,17 @@ def kakaoLoginLogicRedirect():
     if access_token:
         session["access_token"] = access_token
         print("Access token 저장 성공:", access_token)
-        
+
         # 카카오 사용자 정보 가져오기
         kakao_user_info = requests.get(
             "https://kapi.kakao.com/v2/user/me",
             headers={"Authorization": f"Bearer {access_token}"}
         ).json()
 
-        # 카카오 사용자 정보에 'properties'와 'kakao_account'가 존재하는지 확인
-        if 'properties' in kakao_user_info and 'nickname' in kakao_user_info['properties']:
-            nickname = kakao_user_info['properties']['nickname']
-        else:
-            nickname = "No nickname"
-
+        # 사용자 정보 처리
+        nickname = kakao_user_info.get('properties', {}).get('nickname', 'No nickname')
         email = kakao_user_info.get('kakao_account', {}).get('email', 'No email')
-        
+
         # 사용자 정보를 세션에 저장
         session['user'] = {
             'id': kakao_user_info['id'],
@@ -79,3 +82,8 @@ def kakaoLoginLogicRedirect():
     else:
         print("Access token 발급 실패:", response.json())
         return "Access token 발급 실패.", 500
+
+app.register_blueprint(auth_bp)
+
+if __name__ == "__main__":
+    app.run(debug=True, port=8000)
