@@ -2,6 +2,7 @@ from flask import *
 from flask_session import Session
 from flask_login import *
 from db import *
+from auth import auth
 from stock_kr import stock_kr
 from exchange import exchange
 from mypage import mypage
@@ -20,6 +21,7 @@ def create_app():
     socketio.init_app(app)
 
     # 블루프린트 등록
+    app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(stock_kr, url_prefix='/stock_kr')
     app.register_blueprint(exchange, url_prefix='/exchange')
     app.register_blueprint(mypage, url_prefix='/mypage')
