@@ -1,0 +1,8 @@
+flask
+flask-sqlalchemy
+flask-login
+werkzeug
+yfinance
+alpha_vantage
+flask-session
+flask-socketio
