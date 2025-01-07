@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyPage</title>
+    <link rel="stylesheet" href="/static/css/mypage.css">
+</head>
+<body>
+    <h1>마이페이지</h1>
+    
+    <div class="user-info">
+        <h2>{{ user.username }}</h2>
+        <p><strong>보유 원화:</strong> {{ "{:,.0f}".format(user.seed_krw) }} KRW</p>
+        <p><strong>보유 달러:</strong> {{ "{:,.2f}".format(user.seed_usd) }} USD</p>
+    </div>
+
+    <div class="portfolio">
+        <h2>보유 주식 목록</h2>
+        {% if stock_portfolio %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>주식 이름</th>
+                        <th>수량</th>
+                        <th>구매 가격</th>
+                        <th>현재 가격</th>
+                        <th>수익률</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stock_portfolio %}
+                        <tr>
+                            <td>{{ stock.stock_name }}</td>
+                            <td>{{ stock.quantity }}</td>
+                            <td>{{ "{:,.2f}".format(stock.purchase_price) }} KRW</td>
+                            <td>{{ "{:,.2f}".format(stock.current_price) }} KRW</td>
+                            <td>{{ stock.profit_rate }}%</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p><strong>평균 수익률:</strong> {{ avg_profit_rate }}%</p>
+        {% else %}
+            <p>보유한 주식이 없습니다.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
