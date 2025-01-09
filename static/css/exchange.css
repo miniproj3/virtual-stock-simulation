@@ -11,8 +11,9 @@ body {
 header {
     background-color: #005f73;
     color: #fff;
-    padding: 20px;
+    padding: 40px 20px;
     text-align: center;
+    position: relative;
 }
 
 header h1 {
@@ -42,6 +43,29 @@ header h1 {
     font-size: 18px;
     font-weight: bold;
     color: #caf0f8;
+}
+
+/* 네비게이션 바 스타일 */
+.navbar {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+.navbar a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 10px 20px; /* 추가된 스타일 */
+    border-radius: 4px; /* 추가된 스타일 */
+    transition: background-color 0.3s, color 0.3s; /* 추가된 스타일 */
+}
+
+.navbar a:hover {
+    background-color: #003945; /* 배경 색상 변경 */
+    color: #ddd;
 }
 
 /* 메인 섹션 */
@@ -91,7 +115,6 @@ main h2 {
     background-color: #005f73;
     color: #fff;
 }
-
 
 /* 예상 환전 금액 */
 #expected_amount {

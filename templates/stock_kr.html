@@ -4,15 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>가상 주식 시뮬레이션</title>
-    <link rel="stylesheet" href="/static/css/stock.css">
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/stock.js" defer></script>
 </head>
 <body>
     <header>
         <div class="header-content">
             <h1>가상 주식 시뮬레이션</h1>
-            <p>안녕하세요, {{ session['username'] }}님! 현재 보유 원화: {{ "{:,.0f}".format(user.seed_krw) }} KRW</p>
+            <p>안녕하세요, {{ session['username'] }}님! 현재 보유 원화: {{ "{:,.0f}".format(user['seed_krw']) }} KRW</p>
             <nav class="navbar">
                 <a href="/exchange">환전하기</a>
                 <a href="/mypage">마이페이지</a>
@@ -31,7 +30,7 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- 데이터가 업데이트되면 여기에 출력됩니다 -->
+                <!-- 주식 데이터가 여기에 동적으로 추가됩니다 -->
             </tbody>
         </table>
     </main>

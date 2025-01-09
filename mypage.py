@@ -12,7 +12,7 @@ def mypage_home():
         return "사용자를 찾을 수 없습니다.", 404
 
     # 사용자의 주식 포트폴리오 정보
-    stock_portfolio = StockPortfolio.query.filter_by(user_id=user.id).all()
+    stock_portfolio = Portfolio.query.filter_by(user_id=user.id).all()
     total_profit_rate = 0
     if stock_portfolio:
         total_profit_rate = sum([stock.profit_rate for stock in stock_portfolio]) / len(stock_portfolio)
