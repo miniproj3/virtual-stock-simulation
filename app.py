@@ -9,6 +9,13 @@ import threading
 from kafka_consume import consume_stock_data  # Kafka Consumer 함수 추가
 from confluent_kafka.admin import AdminClient, NewTopic
 from kafka_config import KAFKA_BROKER, KAFKA_TOPIC
+import data_preloader  # data_preloader.py 추가
+import logging
+from logging.handlers import RotatingFileHandler
+
+# 로깅 설정
+handler = RotatingFileHandler('app.log', maxBytes=2000, backupCount=5)
+logging.basicConfig(level=logging.INFO, handlers=[handler])
 
 # Kafka 토픽 생성 함수
 def create_topic(topic_name):
@@ -18,9 +25,9 @@ def create_topic(topic_name):
     for topic, f in fs.items():
         try:
             f.result()
-            print(f"Topic '{topic}' created successfully")
+            logging.info(f"Topic '{topic}' created successfully")
         except Exception as e:
-            print(f"Failed to create topic '{topic}': {e}")
+            logging.error(f"Failed to create topic '{topic}': {e}")
 
 # Flask 애플리케이션 초기화
 def create_app():
@@ -56,6 +63,13 @@ def start_kafka_consumer():
     consumer_thread.start()
 
 if __name__ == "__main__":
+    # 데이터 프리로딩
+    try:
+        data_preloader.fetch_kr_stock_data()
+        logging.info("Stock data preloaded successfully")
+    except Exception as e:
+        logging.error(f"Error during data preloading: {e}")
+
     app = create_app()
 
     # 앱 컨텍스트 내에서 DB 초기화 및 테스트 유저 추가

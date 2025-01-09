@@ -8,7 +8,7 @@ body {
 header {
     background-color: #2d3e50;
     color: #fff;
-    padding: 40px 20px; /* 위아래 범위 확장 */
+    padding: 40px 20px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
@@ -20,12 +20,12 @@ header h1 {
 }
 
 header p {
-    margin: 10px 0; /* 여백 증가 */
+    margin: 10px 0;
 }
 
 .navbar {
     position: absolute;
-    bottom: 20px; /* 헤더 아래쪽에 위치하도록 */
+    bottom: 20px;
     right: 20px;
     display: flex;
     gap: 20px;
@@ -99,13 +99,13 @@ a:hover {
 }
 
 .change-percent-0 {
-    color: gray;
+    color: #888;  
 }
 
 .change-percent-positive {
-    color: red;
+    color: #f82828; 
 }
 
 .change-percent-negative {
-    color: blue;
+    color: #3636ff; 
 }

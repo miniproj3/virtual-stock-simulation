@@ -4,6 +4,9 @@ from kafka_config import KAFKA_BROKER, KAFKA_TOPIC
 import yfinance as yf
 import logging
 import json
+import redis
+import threading
+import time
 
 # Blueprint 설정
 stock_kr = Blueprint('stock_kr', __name__)
@@ -11,35 +14,36 @@ stock_kr = Blueprint('stock_kr', __name__)
 # Kafka Producer 설정
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
+# 기존 로깅 핸들러 제거
+logger = logging.getLogger(__name__)
+if logger.hasHandlers():
+    logger.handlers.clear()
+
 # 로깅 설정
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, handlers=[
+    logging.StreamHandler()
+])
+logger = logging.getLogger(__name__)
 
-# 글로벌 변수
-stock_data_cache = []  # 캐싱된 주식 데이터
+# Redis 설정
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-# 초기화 함수
-def initialize_stock_data():
-    global stock_data_cache
-    try:
-        stock_data_cache = fetch_kr_stock_data()
-        logging.info(f"Stock data initialized: {len(stock_data_cache)} entries loaded.")
-        if not stock_data_cache:
-            logging.warning("Stock data cache is empty after initialization")
-    except Exception as e:
-        logging.error(f"Error initializing stock data: {str(e)}")
+# 글로벌 변수 초기화
+stock_data_cache = []
 
 @stock_kr.route('/send_stock_data', methods=['POST'])
 def send_stock_data():
     """Kafka로 주식 데이터를 전송하는 엔드포인트"""
     try:
+        stock_data_cache = json.loads(redis_client.get('kr_stock_data'))
         for stock in stock_data_cache:
             producer.produce(KAFKA_TOPIC, value=json.dumps(stock))
-            logging.info(f"Sent stock data to Kafka: {stock}")
+            logger.info(f"Sent stock data to Kafka: {stock['shortName']}")
         producer.flush()
-        logging.info("Kafka flush successful")
+        logger.info("Kafka flush successful")
         return {"status": "success", "message": "Stock data sent to Kafka"}
     except Exception as e:
-        logging.error(f"Error sending stock data to Kafka: {str(e)}")
+        logger.error(f"Error sending stock data to Kafka: {str(e)}")
         return {"status": "error", "message": str(e)}, 500
 
 @stock_kr.route('/')
@@ -51,20 +55,26 @@ def show_stock_kr():
             'seed_krw': session.get('seed_krw', 0),
             'seed_usd': session.get('seed_usd', 0)
         }
-        logging.info(f"Rendering stock_kr.html for user: {user}")
+        logger.info(f"Rendering stock_kr.html for user: {user['username']}")
         return render_template('stock_kr.html', user=user)
     else:
-        logging.error("User not found in session")
+        logger.error("User not found in session")
         return "User not found", 404
 
 @stock_kr.route('/get_stock_data', methods=['GET'])
 def fetch_stock_data():
     """캐싱된 주식 데이터를 반환"""
     try:
-        logging.info(f"Returning stock data cache: {len(stock_data_cache)} entries")
+        stock_data_cache = json.loads(redis_client.get('kr_stock_data'))
+        logger.debug(f"Returning stock data cache: {len(stock_data_cache)} entries")
+        
+        # 데이터 중 첫 번째 주식 정보만 로그로 기록
+        if stock_data_cache:
+            logger.debug(f"First stock data: {stock_data_cache[0]}")
+            
         return jsonify(stock_data_cache)
     except Exception as e:
-        logging.error(f"Error fetching stock data: {str(e)}")
+        logger.error(f"Error fetching stock data: {str(e)}")
         return {"status": "error", "message": str(e)}, 500
 
 def fetch_kr_stock_data():
@@ -98,16 +108,34 @@ def fetch_kr_stock_data():
                     'regularMarketChangePercent': f"{change_percent:.2f} %"
                 })
             else:
-                logging.warning(f"No valid data for {symbol}")
+                logger.warning(f"No valid data for {symbol}")
         except Exception as e:
-            logging.error(f"Error fetching data for {symbol}: {e}")
+            logger.error(f"Error fetching data for {symbol}: {e}")
 
-    logging.info(f"Final stock data: {stock_data[:5]}...")  # 첫 5개만 로깅
+    logger.debug(f"Final stock data: {stock_data[0]}...")  # 첫 번째 항목만 로깅
     return stock_data
 
-def setup():
-    logging.info("Initializing stock data on app startup")
-    initialize_stock_data()
+def initialize_stock_data():
+    global stock_data_cache
+    try:
+        stock_data_cache = fetch_kr_stock_data()
+        if stock_data_cache:
+            redis_client.set('kr_stock_data', json.dumps(stock_data_cache))
+            logger.info("Stock data cached in Redis")
+    except Exception as e:
+        logger.error(f"Error initializing stock data: {str(e)}")
 
-# Flask 앱 시작 시 초기화
-stock_kr.before_request(setup)
+def update_stock_data():
+    """5초마다 주식 데이터를 업데이트하는 함수"""
+    global stock_data_cache
+    while True:
+        new_data = fetch_kr_stock_data()
+        if new_data != stock_data_cache:  # 데이터가 변경된 경우에만 업데이트
+            stock_data_cache = new_data
+            redis_client.set('kr_stock_data', json.dumps(stock_data_cache))
+            logger.info("Stock data updated and cached in Redis")
+        time.sleep(5)
+
+# 별도의 스레드에서 주기적으로 데이터 업데이트
+update_thread = threading.Thread(target=update_stock_data, daemon=True)
+update_thread.start()

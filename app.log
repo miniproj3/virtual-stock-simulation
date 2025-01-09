@@ -1,0 +1,24 @@
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:werkzeug:127.0.0.1 - - [09/Jan/2025 11:51:22] "GET /stock_kr/get_stock_data HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [09/Jan/2025 11:51:27] "GET /stock_kr/get_stock_data HTTP/1.1" 200 -
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:werkzeug:127.0.0.1 - - [09/Jan/2025 11:51:32] "GET /stock_kr/get_stock_data HTTP/1.1" 200 -
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:werkzeug:127.0.0.1 - - [09/Jan/2025 11:51:37] "GET /stock_kr/get_stock_data HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [09/Jan/2025 11:51:42] "GET /stock_kr/get_stock_data HTTP/1.1" 200 -
+INFO:werkzeug: * Detected change in 'c:\\Users\\hj\\Documents\\proj3_\\stock_kr.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:werkzeug: * Restarting with stat
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis
+INFO:stock_kr:Stock data updated and cached in Redis

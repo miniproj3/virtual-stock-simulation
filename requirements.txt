@@ -10,3 +10,4 @@ confluent-kafka
 kafka-python
 plotly
 finance-datareader
+redis

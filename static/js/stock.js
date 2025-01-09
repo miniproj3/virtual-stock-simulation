@@ -34,7 +34,7 @@ function renderStockData(stockData) {
     stockData.forEach(stock => {
         const stockRow = document.createElement('tr');
 
-        // 변동률에 따른 클래스 적용
+        // 변동률 및 현재 가격에 따른 클래스 적용
         let changeClass = 'change-percent-0'; // 기본은 0으로 설정
         if (stock.regularMarketChange > 0) {
             changeClass = 'change-percent-positive'; // 상승
@@ -44,7 +44,7 @@ function renderStockData(stockData) {
 
         stockRow.innerHTML = `
             <td>${stock.shortName}</td>
-            <td>${stock.regularMarketPrice.toLocaleString()} KRW</td>
+            <td class="${changeClass}"><strong>${stock.regularMarketPrice.toLocaleString()} KRW</strong></td>
             <td class="change ${changeClass}">
                 ${stock.regularMarketChange > 0 ? '+' : ''}${stock.regularMarketChange.toLocaleString()} KRW
             </td>
