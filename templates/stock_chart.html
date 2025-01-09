@@ -1,99 +1,257 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Chart Viewer</title>
+    <title>주식 거래 플랫폼</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 90%;
+            margin: 20px auto;
+        }
+        .stock-list, .stock-detail, .order-book, .chart-section {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            min-width: 300px;
+        }
+        label, ul, button {
+            margin: 10px 0;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        li:hover {
+            background-color: #f1f1f1;
+        }
+        li.selected {
+            background-color: #007bff;
+            color: white;
+        }
+        button {
+            cursor: pointer;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
         canvas {
             margin: 20px auto;
             display: block;
         }
-        h1 {
-            text-align: center;
-        }
-        div {
-            text-align: center;
-            margin-bottom: 20px;
-        }
     </style>
 </head>
 <body>
-    <h1>Stock Chart Viewer</h1>
-    <div>
-        <label for="stockName">Stock Name:</label>
-        <input type="text" id="stockName" placeholder="Enter Stock Name (e.g., NAVER)">
-        <button onclick="loadChart()">Load Chart</button>
+    <h1>주식 거래 플랫폼</h1>
+
+    <div class="container">
+        <!-- 주식 목록 -->
+        <div class="stock-list">
+            <h2>주식 목록</h2>
+            <ul id="stockList"></ul>
+        </div>
+
+        <!-- 주식 세부 정보 및 주문 -->
+        <div class="stock-detail">
+            <h2 id="stockTitle">주식을 선택하세요</h2>
+            <input type="hidden" id="stockSymbol"> <!-- 선택된 주식 심볼 저장 -->
+            <label for="orderType">주문 유형</label>
+            <select id="orderType">
+                <option value="buy">매수</option>
+                <option value="sell">매도</option>
+            </select>
+            <label for="orderAmount">수량</label>
+            <input type="number" id="orderAmount" placeholder="주문 수량 입력">
+            <label for="orderPrice">가격</label>
+            <input type="number" id="orderPrice" placeholder="주문 가격 입력">
+            <button onclick="placeOrder()">주문 실행</button>
+            <button onclick="loadChart()">차트 보기</button>
+        </div>
+
+        <!-- 보유 자산 -->
+        <div class="order-book">
+            <h2>보유 자산</h2>
+            <ul id="portfolioList"></ul>
+        </div>
     </div>
-    <canvas id="candlestickChart" width="800" height="400"></canvas>
+
+    <!-- 주식 차트 -->
+    <div class="container">
+        <div class="chart-section">
+            <h2>주식 차트</h2>
+            <canvas id="candlestickChart" width="800" height="400"></canvas>
+        </div>
+    </div>
 
     <script>
         let candlestickChart;
 
-        async function loadChart() {
-            const stockName = document.getElementById('stockName').value || 'NAVER';
+        // 주식 목록 불러오기
+        const loadStocks = async () => {
+            try {
+                const res = await fetch('/api/stocks');
+                const stocks = await res.json();
+                const stockList = document.getElementById('stockList');
+                stockList.innerHTML = stocks.map(stock => `
+                    <li onclick="selectStock('${stock.stock_symbol}', '${stock.stock_name}', this)">
+                        ${stock.stock_name} (${stock.current_price} 원)
+                    </li>
+                `).join('');
+            } catch (error) {
+                console.error('주식 목록을 불러오는 중 오류 발생:', error);
+            }
+        };
+
+        // 주식 선택 및 UI 업데이트
+        const selectStock = (stockSymbol, stockName, listItem) => {
+            document.getElementById('stockTitle').innerText = `선택된 주식: ${stockName}`;
+            document.getElementById('stockSymbol').value = stockSymbol; // 선택된 심볼 저장
+
+            // 선택된 주식 강조 표시
+            const items = document.querySelectorAll('.stock-list li');
+            items.forEach(item => item.classList.remove('selected'));
+            listItem.classList.add('selected');
+
+            document.getElementById('orderAmount').value = ''; // 수량 초기화
+            document.getElementById('orderPrice').value = '';  // 가격 초기화
+        };
+
+        // 보유 자산 불러오기
+        const loadPortfolio = async () => {
+            try {
+                const res = await fetch('/api/portfolio');
+                const { portfolio } = await res.json();
+                const portfolioList = document.getElementById('portfolioList');
+                portfolioList.innerHTML = portfolio.map(p => `<li>${p.stock_name}: ${p.stock_amount} 주</li>`).join('');
+            } catch (error) {
+                console.error('보유 자산을 불러오는 중 오류 발생:', error);
+            }
+        };
+
+        // 주문 실행
+        const placeOrder = async () => {
+            const type = document.getElementById('orderType').value;
+            const stockSymbol = document.getElementById('stockSymbol').value;
+            const amount = document.getElementById('orderAmount').value;
+
+            if (!stockSymbol) {
+                alert('주식을 선택하세요.');
+                return;
+            }
+            if (!amount) {
+                alert('주문 수량을 입력하세요.');
+                return;
+            }
 
             try {
-                const response = await fetch(`/stock/api/data?name=${stockName}`);
+                const res = await fetch(`/api/${type}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stock_symbol: stockSymbol,
+                        amount: parseInt(amount)
+                    }),
+                });
+
+                const result = await res.json();
+                if (result.message) alert(result.message);
+                loadPortfolio();
+            } catch (error) {
+                console.error('주문 실행 중 오류 발생:', error);
+            }
+        };
+
+        // 주식 차트 불러오기
+        async function loadChart() {
+            const stockSymbol = document.getElementById('stockSymbol').value;
+
+            if (!stockSymbol) {
+                alert('주식을 선택한 후 차트를 확인하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/stock/api/data?name=${stockSymbol}`);
                 const result = await response.json();
 
                 if (result.error) {
-                    alert(`Error: ${result.error}`);
+                    alert(`오류: ${result.error}`);
                     return;
                 }
 
-                console.log('API Response:', result);
+                const { dates, open, high, low, close, moving_averages } = result;
 
-                const { dates, close, open, high, low, moving_averages } = result;
-
-                // Prepare candlestick data
                 const candlestickData = dates.map((date, index) => ({
-                    x: new Date(date), // Use JavaScript Date object for precise formatting
+                    x: new Date(date),
                     o: open[index],
                     h: high[index],
                     l: low[index],
                     c: close[index],
                 }));
 
-                // Prepare moving averages data
-                const maDatasets = Object.entries(moving_averages).map(([maKey, maValues]) => ({
-                    label: `${maKey}`,
+                const maDatasets = Object.entries(moving_averages).map(([key, values]) => ({
+                    label: key,
                     data: dates.map((date, index) => ({
                         x: new Date(date),
-                        y: maValues[index],
+                        y: values[index],
                     })),
-                    borderColor: getColorForMA(maKey),
+                    borderColor: getColorForMA(key),
                     borderWidth: 1.5,
                     pointRadius: 0,
                     fill: false,
-                    type: 'line', // Moving averages as line charts
+                    type: 'line',
                 }));
 
-                // Destroy existing chart if it exists
                 if (candlestickChart) candlestickChart.destroy();
 
-                // Initialize candlestick chart
-                const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
-                candlestickChart = new Chart(candlestickCtx, {
+                const ctx = document.getElementById('candlestickChart').getContext('2d');
+                candlestickChart = new Chart(ctx, {
                     type: 'candlestick',
                     data: {
                         datasets: [
                             {
-                                label: `${stockName} Stock Price`,
+                                label: `${stockSymbol} 주식 가격`,
                                 data: candlestickData,
                                 color: {
-                                    up: 'rgba(0, 200, 0, 0.7)', // Green for up
-                                    down: 'rgba(200, 0, 0, 0.7)', // Red for down
-                                    unchanged: 'rgba(0, 0, 200, 0.7)', // Blue for unchanged
+                                    up: 'rgba(0, 200, 0, 0.7)',
+                                    down: 'rgba(200, 0, 0, 0.7)',
+                                    unchanged: 'rgba(0, 0, 200, 0.7)',
                                 },
-                                borderColor: 'rgba(0, 0, 0, 0.7)',
-                                barPercentage: 0.1, // Very narrow bar width
-                                categoryPercentage: 0.1, // Very narrow bar spacing
+                                barPercentage: 0.01,
+                                categoryPercentage: 0.01,
                             },
-                            ...maDatasets, // Append moving averages
+                            ...maDatasets,
                         ],
                     },
                     options: {
@@ -101,58 +259,28 @@
                         plugins: {
                             title: {
                                 display: true,
-                                text: `${stockName} Stock Candlestick Chart`,
+                                text: `${stockSymbol} 주식 캔들 차트`,
                             },
                         },
                         scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    tooltipFormat: 'yyyy-MM-dd', // Tooltip date format
-                                    displayFormats: {
-                                        day: 'yyyy-MM-dd', // Ensure full date is displayed
-                                    },
-                                },
-                                ticks: {
-                                    autoSkip: false, // Show all dates
-                                    maxRotation: 45, // Rotate the labels
-                                    callback: function (value) {
-                                        const date = new Date(value);
-                                        return date.toLocaleDateString(); // Format as date
-                                    },
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Date',
-                                },
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Price',
-                                },
-                            },
+                            x: { type: 'time', time: { unit: 'day' }, title: { display: true, text: '날짜' } },
+                            y: { title: { display: true, text: '가격' } },
                         },
                     },
                 });
-
             } catch (error) {
-                console.error('Error loading stock chart:', error);
-                alert('Failed to load stock data. Please try again.');
+                console.error('차트를 불러오는 중 오류 발생:', error);
             }
         }
 
-        // Helper function to assign colors to moving averages
-        function getColorForMA(maKey) {
-            const colors = {
-                MA5: 'purple',
-                MA20: 'orange',
-                MA60: 'blue',
-                MA120: 'green',
-                MA240: 'red',
-            };
-            return colors[maKey] || 'gray';
+        function getColorForMA(key) {
+            const colors = { MA5: '보라색', MA20: '주황색', MA60: '파란색', MA120: '초록색', MA240: '빨간색' };
+            return colors[key] || '회색';
         }
+
+        // 초기화
+        loadStocks();
+        loadPortfolio();
     </script>
 </body>
 </html>
