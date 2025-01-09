@@ -10,10 +10,14 @@
     <header>
         <h1>내 보유금</h1>
         <div class="balance-info">
-            <p><strong>원화:</strong> <span class="balance-krw">{{ '{:,.0f}'.format(user.seed_krw|round) }} KRW_S</span></p>
-            <p><strong>달러:</strong> <span class="balance-usd">{{ user.seed_usd|round(2) }} USD_S</span></p>
+            <p><strong>원화:</strong> <span class="balance-krw">{{ '{:,.0f}'.format(user.seed_krw|round) }} KRW</span></p>
+            <p><strong>달러:</strong> <span class="balance-usd">{{ '{:.2f}'.format(user.seed_usd) }} USD</span></p>
         </div>
-        <p class="exchange-rate"><strong>환율:</strong> 1 USD = <span id="exchange_rate">{{ exchange_rate }}</span> KRW</p>
+        <p class="exchange-rate"><strong>환율:</strong> 1 USD = <span id="exchange_rate">{{ '{:.2f}'.format(exchange_rate) }}</span> KRW</p>
+        <nav class="navbar">
+            <a href="/">홈</a>
+            <a href="/mypage">마이페이지</a>
+        </nav>
     </header>
     <main>
         <h2>환전하기</h2>

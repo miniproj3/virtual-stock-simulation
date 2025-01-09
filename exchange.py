@@ -1,13 +1,9 @@
-import requests
+import yfinance as yf
 from flask import *
 from db import *
 from datetime import *
 
 exchange = Blueprint('exchange', __name__)
-
-# API URL과 사용자 API 키
-API_KEY = "2b2b881178db5167b9642f2b"  # 발급받은 API 키
-API_URL = f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/USD"  # USD를 기준으로
 
 # 캐시 변수
 cached_exchange_rate = None
@@ -18,23 +14,17 @@ def get_exchange_rate():
     now = datetime.now()
     next_full_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
-    # 캐시된 데이터가 있는지 확인, 마지막 가져온 시간이 다음 정각보다 이전인지 확인
+    # 캐시된 데이터가 있는지 확인, 마지막 가져온 시간이 다음 정각보다 이전인지 확인(정각마다 가져오려고)
     if cached_exchange_rate and last_fetch_time and last_fetch_time >= next_full_hour - timedelta(hours=1):
         return cached_exchange_rate
 
     try:
-        response = requests.get(API_URL)
-        data = response.json()
-        print(data)  # API 응답 출력
-        if data.get('result') == 'success':
-            # USD to KRW 환율 반환, 정수로 변환
-            cached_exchange_rate = int(data['conversion_rates']['KRW'])
-            last_fetch_time = now
-            return cached_exchange_rate
-        else:
-            print(f"환율 API 오류: {data.get('error-type', '알 수 없는 오류')}")
-            return None
-    except requests.RequestException as e:
+        ticker = yf.Ticker("USDKRW=X")
+        exchange_rate = ticker.history(period="1d")['Close'].iloc[-1]
+        cached_exchange_rate = round(exchange_rate, 2)  # 소수점 두 자리까지 반올림
+        last_fetch_time = now
+        return cached_exchange_rate
+    except Exception as e:
         print(f"환율 데이터를 가져오는 중 오류 발생: {e}")
         return None
 
@@ -46,7 +36,7 @@ def handle_exchange():
     # 실시간 환율 가져오기
     exchange_rate = get_exchange_rate()
     if not exchange_rate:
-        exchange_rate = 1450  # API 실패 시 기본 환율
+        exchange_rate = 1450.00  # API 실패 시 기본 환율
 
     message = ""
     if request.method == 'POST':
@@ -55,24 +45,48 @@ def handle_exchange():
 
         if currency_pair == 'KRW_to_USD':  # 원화를 달러로 환전
             if user.seed_krw >= amount:
-                exchanged_amount = round(amount / exchange_rate)
+                exchanged_amount = round(amount / exchange_rate, 2)  # 소수점 두 자리까지 계산
                 user.seed_krw -= amount
                 user.seed_usd += exchanged_amount
+
+                # 환전 기록 저장
+                exchange_record = Exchange(
+                    user_id=user.id,
+                    from_currency='KRW',
+                    to_currency='USD',
+                    amount=amount,
+                    exchange_rate=exchange_rate,
+                    total_value=exchanged_amount
+                )
+                db.session.add(exchange_record)
+
                 message = f"{amount} KRW를 {exchanged_amount} USD로 환전했습니다!"
             else:
                 message = "잔액이 부족합니다!"
         elif currency_pair == 'USD_to_KRW':  # 달러를 원화로 환전
             if user.seed_usd >= amount:
-                exchanged_amount = round(amount * exchange_rate)
+                exchanged_amount = round(amount * exchange_rate, 2)  # 소수점 두 자리까지 계산
                 user.seed_usd -= amount
                 user.seed_krw += exchanged_amount
+
+                # 환전 기록 저장
+                exchange_record = Exchange(
+                    user_id=user.id,
+                    from_currency='USD',
+                    to_currency='KRW',
+                    amount=amount,
+                    exchange_rate=exchange_rate,
+                    total_value=exchanged_amount
+                )
+                db.session.add(exchange_record)
+
                 message = f"{amount} USD를 {exchanged_amount} KRW로 환전했습니다!"
             else:
                 message = "잔액이 부족합니다!"
         else:
             message = "올바른 환전 통화를 선택해주세요."
 
-        db.session.commit()  # 변경사항 저장
+        db.session.commit()  # 변경사항 저장 및 환전 기록 커밋
         return render_template('exchange.html', user=user, exchange_rate=exchange_rate, message=message)
 
     return render_template('exchange.html', user=user, exchange_rate=exchange_rate)

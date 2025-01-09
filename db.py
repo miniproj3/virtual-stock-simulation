@@ -1,27 +1,97 @@
-from flask import *
+import pymysql
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import *
+from sqlalchemy import *
+from sqlalchemy.exc import OperationalError
+
+pymysql.install_as_MySQLdb()
 
 db = SQLAlchemy()
 
+def init_app(app):
+    # MySQL RDS 설정
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin001:admin001@testdb001.caruphjxuyij.ap-northeast-2.rds.amazonaws.com/testdb001'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(app)
+
+    # 데이터베이스 존재 여부 확인 및 생성
+    engine = create_engine('mysql+pymysql://admin001:admin001@testdb001.caruphjxuyij.ap-northeast-2.rds.amazonaws.com')
+    with engine.connect() as connection:
+        try:
+            connection.execute(text("USE testdb001"))
+        except OperationalError:
+            connection.execute(text("CREATE DATABASE testdb001"))
+            connection.execute(text("USE testdb001"))
+
+# 사용자
 class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False, unique=True)
-    seed_krw = db.Column(db.Float, default=1000000.0)  # KRW 초기 금액
-    seed_usd = db.Column(db.Float, default=0.0)        # USD 초기 금액
+    seed_krw = db.Column(db.Float, default=1000000.0)
+    seed_usd = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    last_login = db.Column(db.DateTime)
 
     # 관계 설정
-    stocks = db.relationship('StockPortfolio', backref='owner', lazy=True)
+    portfolios = db.relationship('Portfolio', backref='owner', lazy=True)
+    transactions = db.relationship('StockTransaction', backref='owner', lazy=True)
+    exchanges = db.relationship('Exchange', backref='owner', lazy=True)
 
-class StockPortfolio(db.Model):
-    __tablename__ = 'stock_portfolio'
+# # 시드머니 기록
+# class SeedMoney(db.Model):
+#     __tablename__ = 'seed_money'
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+#     seed_krw = db.Column(db.Float, default=0.0)
+#     seed_usd = db.Column(db.Float, default=0.0)
+#     granted_date = db.Column(db.DateTime, default=db.func.now())
+#     reset_date = db.Column(db.DateTime, nullable=True)
+#     status = db.Column(db.Enum('GRANTED', 'RESET', name='status_enum'), nullable=False)
+
+# 주식 정보
+class Stock(db.Model):
+    __tablename__ = 'stocks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    stock_symbol = db.Column(db.String(50), nullable=False, unique=True)
+    stock_name = db.Column(db.String(255), nullable=False)
+    current_price = db.Column(db.Float, nullable=True)
+    market = db.Column(db.Enum('DOMESTIC', 'INTERNATIONAL', name='market_enum'), nullable=False)
+
+# 포트폴리오
+class Portfolio(db.Model):
+    __tablename__ = 'portfolios'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    stock_name = db.Column(db.String(100), nullable=False)  # 주식 이름
-    quantity = db.Column(db.Integer, nullable=False)        # 보유 수량
-    average_price = db.Column(db.Float, nullable=False)     # 평균 매수 단가
-    current_price = db.Column(db.Float, nullable=True)      # 현재 가격 (API로 업데이트)
-    profit_rate = db.Column(db.Float, nullable=True)        # 수익률
+    stock_id = db.Column(db.Integer, db.ForeignKey('stocks.id'), nullable=False)
+    stock_amount = db.Column(db.Float, default=0.0)
+    total_value = db.Column(db.Float, default=0.0)
+
+# 거래 기록
+class StockTransaction(db.Model):
+    __tablename__ = 'stock_transactions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stocks.id'), nullable=False)
+    transaction_type = db.Column(db.Enum('BUY', 'SELL', name='transaction_type_enum'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    price_per_unit = db.Column(db.Float, nullable=False)
+    total_value = db.Column(db.Float, nullable=False)
+    transaction_date = db.Column(db.DateTime, default=db.func.now())
+
+# 환전 기록
+class Exchange(db.Model):
+    __tablename__ = 'exchanges'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    from_currency = db.Column(db.String(10), nullable=False)
+    to_currency = db.Column(db.String(10), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    exchange_rate = db.Column(db.Float, nullable=False)
+    total_value = db.Column(db.Float, nullable=False)
+    exchange_date = db.Column(db.DateTime, default=db.func.now())

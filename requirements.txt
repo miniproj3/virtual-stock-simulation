@@ -5,4 +5,9 @@ werkzeug
 yfinance
 alpha_vantage
 flask-session
-flask-socketio
+pymysql
+confluent-kafka
+kafka-python
+plotly
+finance-datareader
+redis

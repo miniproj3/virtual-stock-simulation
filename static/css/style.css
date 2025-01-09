@@ -1,29 +1,49 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: #f8f9fa;
     margin: 0;
     padding: 0;
 }
 
 header {
-    background-color: #5a67d8;
+    background-color: #2d3e50;
     color: #fff;
-    padding: 20px;
+    padding: 40px 20px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 header h1 {
     margin: 0;
-    font-size: 2rem;
+    font-size: 2.5rem;
 }
 
 header p {
-    margin: 5px 0;
+    margin: 10px 0;
+}
+
+.navbar {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+.navbar a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+
+.navbar a:hover {
+    color: #ddd;
 }
 
 main {
-    max-width: 800px;
+    max-width: 900px;
     margin: 40px auto;
     padding: 20px;
     background-color: #fff;
@@ -32,8 +52,8 @@ main {
 }
 
 h2 {
-    color: #333;
-    font-size: 1.5rem;
+    color: #2d3e50;
+    font-size: 2rem;
     margin-bottom: 20px;
 }
 
@@ -50,42 +70,42 @@ table th, table td {
 }
 
 table th {
-    background-color: #f4f4f9;
-    color: #5a67d8;
+    background-color: #f1f3f5;
+    color: #2d3e50;
 }
 
 table td {
     background-color: #fff;
 }
 
-form {
-    display: flex;
-    flex-direction: column;
-}
-
-label {
-    font-weight: bold;
-    margin: 10px 0 5px;
-}
-
-input, select, button {
-    padding: 10px;
-    margin-bottom: 20px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-button {
-    background-color: #5a67d8;
+a {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #2d3e50;
     color: #fff;
-    border: none;
-    cursor: pointer;
+    text-decoration: none;
+    border-radius: 4px;
     transition: background-color 0.3s;
 }
 
-button:hover {
-    background-color: #434190;
+a:hover {
+    background-color: #1c2a38;
 }
 
+/* 주가변동표현 */
+.change {
+    font-weight: bold;
+}
 
+.change-percent-0 {
+    color: #888;  
+}
+
+.change-percent-positive {
+    color: #f82828; 
+}
+
+.change-percent-negative {
+    color: #3636ff; 
+}

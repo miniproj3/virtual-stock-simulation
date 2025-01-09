@@ -28,14 +28,14 @@ document.addEventListener("DOMContentLoaded", () => {
             amountInput.step = "1000";
             amountInput.min = "0";
         } else if (selectedPair === "USD_to_KRW") {
-            amountInput.step = "1";
+            amountInput.step = "0.01";
             amountInput.min = "0";
         }
     }
 
     function updateExpectedAmount() {
         const inputAmount = parseFloat(amountInput.value) || 0;
-        const exchangeRate = Math.round(parseFloat(document.getElementById("exchange_rate").textContent));
+        const exchangeRate = parseFloat(document.getElementById("exchange_rate").textContent);
 
         console.log(`Selected pair: ${selectedPair}`);  // 선택된 통화쌍 출력
         console.log(`Input amount: ${inputAmount}`);    // 입력된 금액 출력
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (selectedPair === "KRW_to_USD") {
                     if (inputAmount < 1000) {
-                        showMessage("최소 환전 단위는 1000 KRW_S입니다.");
+                        showMessage("최소 환전 단위는 1000 KRW입니다.");
                         return;
                     }
                     if (inputAmount > userBalance) {
@@ -78,10 +78,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         return;
                     }
                     expectedAmount = (inputAmount / exchangeRate).toFixed(2);
-                    suffix = "USD_S";
+                    suffix = "USD";
                 } else if (selectedPair === "USD_to_KRW") {
                     if (inputAmount < 1) {
-                        showMessage("최소 환전 단위는 1 USD_S입니다.");
+                        showMessage("최소 환전 단위는 1 USD입니다.");
                         return;
                     }
                     if (inputAmount > userBalance) {
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         return;
                     }
                     expectedAmount = Math.round(inputAmount * exchangeRate);  // 정수로 변환
-                    suffix = "KRW_S";
+                    suffix = "KRW";
                 }
 
                 console.log(`Expected amount: ${expectedAmount}`);  // 예상 환전 금액 출력
