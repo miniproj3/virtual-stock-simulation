@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Chart Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        canvas {
+            margin: 20px auto;
+            display: block;
+        }
+        h1 {
+            text-align: center;
+        }
+        div {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stock Chart Viewer</h1>
+    <div>
+        <label for="stockName">Stock Name:</label>
+        <input type="text" id="stockName" placeholder="Enter Stock Name (e.g., NAVER)">
+        <button onclick="loadChart()">Load Chart</button>
+    </div>
+    <canvas id="candlestickChart" width="800" height="400"></canvas>
+
+    <script>
+        let candlestickChart;
+
+        async function loadChart() {
+            const stockName = document.getElementById('stockName').value || 'NAVER';
+
+            try {
+                const response = await fetch(`/stock/api/data?name=${stockName}`);
+                const result = await response.json();
+
+                if (result.error) {
+                    alert(`Error: ${result.error}`);
+                    return;
+                }
+
+                console.log('API Response:', result);
+
+                const { dates, close, open, high, low, moving_averages } = result;
+
+                // Prepare candlestick data
+                const candlestickData = dates.map((date, index) => ({
+                    x: new Date(date), // Use JavaScript Date object for precise formatting
+                    o: open[index],
+                    h: high[index],
+                    l: low[index],
+                    c: close[index],
+                }));
+
+                // Prepare moving averages data
+                const maDatasets = Object.entries(moving_averages).map(([maKey, maValues]) => ({
+                    label: `${maKey}`,
+                    data: dates.map((date, index) => ({
+                        x: new Date(date),
+                        y: maValues[index],
+                    })),
+                    borderColor: getColorForMA(maKey),
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    fill: false,
+                    type: 'line', // Moving averages as line charts
+                }));
+
+                // Destroy existing chart if it exists
+                if (candlestickChart) candlestickChart.destroy();
+
+                // Initialize candlestick chart
+                const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
+                candlestickChart = new Chart(candlestickCtx, {
+                    type: 'candlestick',
+                    data: {
+                        datasets: [
+                            {
+                                label: `${stockName} Stock Price`,
+                                data: candlestickData,
+                                color: {
+                                    up: 'rgba(0, 200, 0, 0.7)', // Green for up
+                                    down: 'rgba(200, 0, 0, 0.7)', // Red for down
+                                    unchanged: 'rgba(0, 0, 200, 0.7)', // Blue for unchanged
+                                },
+                                borderColor: 'rgba(0, 0, 0, 0.7)',
+                                barPercentage: 0.1, // Very narrow bar width
+                                categoryPercentage: 0.1, // Very narrow bar spacing
+                            },
+                            ...maDatasets, // Append moving averages
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `${stockName} Stock Candlestick Chart`,
+                            },
+                        },
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    tooltipFormat: 'yyyy-MM-dd', // Tooltip date format
+                                    displayFormats: {
+                                        day: 'yyyy-MM-dd', // Ensure full date is displayed
+                                    },
+                                },
+                                ticks: {
+                                    autoSkip: false, // Show all dates
+                                    maxRotation: 45, // Rotate the labels
+                                    callback: function (value) {
+                                        const date = new Date(value);
+                                        return date.toLocaleDateString(); // Format as date
+                                    },
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                },
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Price',
+                                },
+                            },
+                        },
+                    },
+                });
+
+            } catch (error) {
+                console.error('Error loading stock chart:', error);
+                alert('Failed to load stock data. Please try again.');
+            }
+        }
+
+        // Helper function to assign colors to moving averages
+        function getColorForMA(maKey) {
+            const colors = {
+                MA5: 'purple',
+                MA20: 'orange',
+                MA60: 'blue',
+                MA120: 'green',
+                MA240: 'red',
+            };
+            return colors[maKey] || 'gray';
+        }
+    </script>
+</body>
+</html>
