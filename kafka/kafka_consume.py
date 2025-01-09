@@ -2,7 +2,7 @@ from confluent_kafka import Consumer, KafkaException, KafkaError
 import json
 import logging
 import threading
-from kafka_config import KAFKA_BROKER, KAFKA_TOPIC
+from kafka.kafka_config import KAFKA_BROKER, KAFKA_TOPIC
 
 # 전역 변수로 stock_data 초기화
 stock_data = []

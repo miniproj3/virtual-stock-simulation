@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function fetchStockData() {
+    console.log('Fetching stock data...');
     fetch('/stock_kr/get_stock_data')
         .then(response => response.json())
         .then(data => {
@@ -43,7 +44,7 @@ function renderStockData(stockData) {
         }
 
         stockRow.innerHTML = `
-            <td>${stock.shortName}</td>
+            <td><a href="#" class="stock-link" data-symbol="${stock.symbol}">${stock.shortName}</a></td>
             <td class="${changeClass}"><strong>${stock.regularMarketPrice.toLocaleString()} KRW</strong></td>
             <td class="change ${changeClass}">
                 ${stock.regularMarketChange > 0 ? '+' : ''}${stock.regularMarketChange.toLocaleString()} KRW
@@ -55,4 +56,24 @@ function renderStockData(stockData) {
 
         stockListContainer.appendChild(stockRow);
     });
+
+    // 종목 이름 클릭 시 팝업 열기 기능 추가
+    const stockLinks = document.querySelectorAll(".stock-link");
+    stockLinks.forEach(link => {
+        link.addEventListener("click", (event) => {
+            event.preventDefault();
+            const symbol = link.getAttribute("data-symbol");
+            openStockPopup(symbol);
+        });
+    });
+}
+
+function openStockPopup(symbol) {
+    if (!symbol) {
+        console.error('Invalid stock symbol');
+        return;
+    }
+    const popupUrl = `/stock_kr_detail/stock_detail?symbol=${symbol}`;
+    const popupOptions = "width=800,height=600,scrollbars=yes,resizable=yes";
+    window.open(popupUrl, "StockPopup", popupOptions);
 }
