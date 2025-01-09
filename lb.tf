@@ -54,6 +54,7 @@ resource "aws_lb_target_group_attachment" "web_attachment" {
 resource "aws_lb" "tf_nlb" {
   internal           = true
   load_balancer_type = "network"
+  security_groups    = [aws_security_group.tf_sg_nlb.id]
   subnets            = [aws_subnet.tf_sub_pri[0].id, aws_subnet.tf_sub_pri[1].id]
 
   tags = {

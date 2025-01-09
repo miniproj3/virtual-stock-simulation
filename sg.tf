@@ -31,7 +31,8 @@ resource "aws_security_group" "tf_sg_web" {
     from_port       = 8080
     to_port         = 8080
     protocol        = "tcp"
-    security_groups = [aws_security_group.tf_sg_alb.id]
+    #cidr_blocks = ["10.0.10.0/24","10.0.20.0/24"]
+    security_groups = [aws_security_group.tf_sg_alb.id] 
   }
 
   ingress {
@@ -62,13 +63,21 @@ resource "aws_security_group" "tf_sg_was" {
     from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
+    #cidr_blocks = ["10.0.11.0/24", "10.0.21.0/24"]
     security_groups = [aws_security_group.tf_sg_nlb.id]
-  }
+ }
   ingress {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
     security_groups = [aws_security_group.tf_sg_bastion.id]
+  }
+
+  ingress {
+    from_port       = 5000
+    to_port         = 5000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.tf_sg_web.id]
   }
 
   egress {
@@ -94,12 +103,6 @@ resource "aws_security_group" "tf_sg_alb" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  ingress {
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.tf_sg_bastion.id]
-  }
 
   egress {
     from_port   = 0
@@ -123,12 +126,6 @@ resource "aws_security_group" "tf_sg_nlb" {
     to_port         = 65535
     protocol        = "tcp"
     security_groups = [aws_security_group.tf_sg_web.id]
-  }
-  ingress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    security_groups = [aws_security_group.tf_sg_bastion.id]
   }
 
   egress {

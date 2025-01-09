@@ -1,13 +1,13 @@
 #!/bin/bash
 #
 docker pull nginx
-docker run -d --name nginx --restart always -p 8080:1111 nginx
+docker run -d --name nginx -p 5000:2222 nginx
 
 docker exec nginx bash -c "apt update && apt install vim -y"
 docker exec nginx bash -c "echo '${INSTANCE_NAME}' > /usr/share/nginx/html/index.html"
 docker exec nginx bash -c "cat <<EOL > /etc/nginx/conf.d/default.conf
 server {
-    listen       2222
+    listen       2222;
     listen  [::]:2222;
     server_name  localhost;
 

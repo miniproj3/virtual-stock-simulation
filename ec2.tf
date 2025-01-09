@@ -8,6 +8,13 @@ resource "aws_instance" "tf_bastion" {
   tags = {
     Name = "tf_bastion"
   }
+  user_data = templatefile("user-data-bastion.sh", {
+    WEB1IP = aws_instance.tf_web[0].private_ip
+    WEB2IP = aws_instance.tf_web[1].private_ip
+    WAS1IP = aws_instance.tf_was[0].private_ip
+    WAS2IP = aws_instance.tf_was[1].private_ip
+  })
+  user_data_replace_on_change = true
 }
 
 # Web EC2 Instances
