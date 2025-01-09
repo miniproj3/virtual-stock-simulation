@@ -11,8 +11,6 @@ resource "aws_instance" "tf_bastion" {
   user_data = templatefile("user-data-bastion.sh", {
     WEB1IP = aws_instance.tf_web[0].private_ip
     WEB2IP = aws_instance.tf_web[1].private_ip
-    WAS1IP = aws_instance.tf_was[0].private_ip
-    WAS2IP = aws_instance.tf_was[1].private_ip
   })
   user_data_replace_on_change = true
 }
@@ -36,7 +34,7 @@ resource "aws_instance" "tf_web" {
 }
 
 # WAS EC2 Instances
-resource "aws_instance" "tf_was" {
+/*resource "aws_instance" "tf_was" {
   count           = 2
   ami             = "ami-0cdfea847ba37bca3" # Amazon Linux 2 AMI
   instance_type   = "t2.medium"
@@ -50,4 +48,34 @@ resource "aws_instance" "tf_was" {
   tags = {
     Name = "tf_was${count.index + 1}"
   }
-}
+}*/
+
+# 시작 템플릿으로 재구성 (WAS)
+resource "aws_launch_template" "tf_st_was" {
+  image_id = "ami-0cdfea847ba37bca3"
+  instance_type = "t2.medium"
+  # Auto Scaling Group 생성할 때, Subnet 선택 할 것 ! (시작 템플릿에서는 하나만 가능해서)
+  vpc_security_group_ids = [aws_security_group.tf_sg_was.id]
+  user_data = filebase64("user-data-was.sh")
+  tags = {
+    Name = "tf_st_was"
+  }
+}  
+  resource "aws_autoscaling_group" "tf_auto_was" {
+    launch_template {
+      id = aws_launch_template.tf_st_was.id
+    }
+    
+    target_group_arns = [aws_lb_target_group.tf_tg_was.arn]
+    
+    vpc_zone_identifier = [aws_subnet.tf_sub_pri[2].id, aws_subnet.tf_sub_pri[3].id]
+    min_size = 3
+    max_size = 6
+    tag {
+      key = "Name"
+      value = "tf_auto_was"
+      propagate_at_launch = true
+    }
+  }
+  
+

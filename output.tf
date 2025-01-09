@@ -13,16 +13,6 @@ output "tf_web2_private_ip" {
   description = "tf_web2_private_ip"
 }
 
-output "tf_was1_private_ip" {
-  value       = aws_instance.tf_was[0].private_ip
-  description = "tf_was1_private_ip"
-}
-
-output "tf_was2_private_ip" {
-  value       = aws_instance.tf_was[1].private_ip
-  description = "tf_was2_private_ip"
-}
-
 output "alb_dns_name" {
   value       = aws_lb.tf_alb.dns_name
   description = "alb_dns_name"
