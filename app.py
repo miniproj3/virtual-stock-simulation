@@ -3,7 +3,8 @@ from flask_session import Session
 from flask_login import *
 from db import *
 from blueprints.stock_kr import stock_kr
-from blueprints.stock_kr_detail import stock_kr_detail
+from blueprints.auth import auth
+from blueprints.stock_kr_detail import stock_kr_detail  # 추가된 부분
 from blueprints.exchange import exchange
 from blueprints.mypage import mypage
 import threading
@@ -35,7 +36,6 @@ def create_topic(topic_name):
             else:
                 logging.error(f"Failed to create topic '{topic}': {e}")
 
-
 # Flask 애플리케이션 초기화
 def create_app(config_name):
     app = Flask(__name__)
@@ -47,9 +47,10 @@ def create_app(config_name):
 
     # 블루프린트 등록
     app.register_blueprint(stock_kr, url_prefix='/stock_kr')
-    app.register_blueprint(stock_kr_detail, url_prefix='/stock_kr_detail')
+    app.register_blueprint(stock_kr_detail, url_prefix='/stock_kr_detail')  # 추가된 부분
     app.register_blueprint(exchange, url_prefix='/exchange')
     app.register_blueprint(mypage, url_prefix='/mypage')
+    app.register_blueprint(auth, url_prefix='/auth')
 
     @app.route('/')
     def main():
@@ -58,7 +59,7 @@ def create_app(config_name):
             session['username'] = user.username
             session['seed_krw'] = user.seed_krw
             session['seed_usd'] = user.seed_usd
-            return render_template('stock_kr.html', user=user)
+            return render_template('auth.html', user=user)
         else:
             return "User not found", 404
 

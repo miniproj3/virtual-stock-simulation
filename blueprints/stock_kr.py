@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session, jsonify, request
-from confluent_kafka import Producer
+from kafka.kafka_producer import get_producer
 from kafka.kafka_config import KAFKA_BROKER, KAFKA_TOPIC
 import yfinance as yf
 import logging
@@ -11,8 +11,8 @@ import time
 # Blueprint 설정
 stock_kr = Blueprint('stock_kr', __name__)
 
-# Kafka Producer 설정
-producer = Producer({'bootstrap.servers': KAFKA_BROKER})
+# Kafka Producer 가져오기
+producer = get_producer()
 
 # 기존 로깅 핸들러 제거
 logger = logging.getLogger(__name__)
@@ -61,6 +61,7 @@ def show_stock_kr():
         logger.error("User not found in session")
         return "User not found", 404
 
+# 주식 데이터를 반환하는 엔드포인트
 @stock_kr.route('/get_stock_data', methods=['GET'])
 def fetch_stock_data():
     """캐싱된 주식 데이터를 반환"""
@@ -68,7 +69,6 @@ def fetch_stock_data():
         stock_data_cache = json.loads(redis_client.get('kr_stock_data'))
         logger.debug(f"Returning stock data cache: {len(stock_data_cache)} entries")
         
-        # 데이터 중 첫 번째 주식 정보만 로그로 기록
         if stock_data_cache:
             logger.debug(f"First stock data: {stock_data_cache[0]}")
             
@@ -103,6 +103,7 @@ def fetch_kr_stock_data():
                 change = current_price - previous_close
                 change_percent = (change / previous_close) * 100
                 stock_data.append({
+                    'symbol': symbol,  # symbol 추가
                     'shortName': stock_name,
                     'regularMarketPrice': round(current_price),
                     'regularMarketChange': round(change),
@@ -126,6 +127,7 @@ def initialize_stock_data():
     except Exception as e:
         logger.error(f"Error initializing stock data: {str(e)}")
 
+# 주기적인 데이터 업데이트 스레드
 def update_stock_data():
     """5초마다 주식 데이터를 업데이트하는 함수"""
     global stock_data_cache

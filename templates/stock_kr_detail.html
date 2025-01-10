@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주식 정보</title>
-    <link rel="stylesheet" href="/static/css/stock_kr_detail.css">
+    <title>Stock Detail</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="stock_kr_detail.js"></script>
 </head>
 <body>
-    <div id="chart-container">
-        <canvas id="stockChart"></canvas>
+    <h1>Stock Detail</h1>
+    <canvas id="stockChart"></canvas>
+    <div>
+        <button id="buyButton">Buy</button>
+        <button id="sellButton">Sell</button>
     </div>
-    <script src="/static/js/stock_kr_detail.js"></script>
 </body>
 </html>

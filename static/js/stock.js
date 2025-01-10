@@ -8,6 +8,7 @@ function fetchStockData() {
     fetch('/stock_kr/get_stock_data')
         .then(response => response.json())
         .then(data => {
+            console.log('Received data:', data);
             if (data.length > 0) {
                 console.log('Stock Data:', data);
                 renderStockData(data);
@@ -43,6 +44,8 @@ function renderStockData(stockData) {
             changeClass = 'change-percent-negative'; // 하락
         }
 
+        const changePercent = parseFloat(stock.regularMarketChangePercent);
+
         stockRow.innerHTML = `
             <td><a href="#" class="stock-link" data-symbol="${stock.symbol}">${stock.shortName}</a></td>
             <td class="${changeClass}"><strong>${stock.regularMarketPrice.toLocaleString()} KRW</strong></td>
@@ -50,7 +53,7 @@ function renderStockData(stockData) {
                 ${stock.regularMarketChange > 0 ? '+' : ''}${stock.regularMarketChange.toLocaleString()} KRW
             </td>
             <td class="change ${changeClass}">
-                ${stock.regularMarketChangePercent}
+                ${changePercent.toFixed(2)}%
             </td>
         `;
 
@@ -63,6 +66,7 @@ function renderStockData(stockData) {
         link.addEventListener("click", (event) => {
             event.preventDefault();
             const symbol = link.getAttribute("data-symbol");
+            console.log('Stock symbol clicked:', symbol);
             openStockPopup(symbol);
         });
     });
