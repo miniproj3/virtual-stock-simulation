@@ -2,6 +2,8 @@ import yfinance as yf
 import logging
 import json
 import redis
+import threading
+import time
 
 # Redis 설정
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -16,25 +18,38 @@ STOCK_SYMBOLS = [
 
 def fetch_kr_stock_data():
     stock_data = []
-
     for symbol in STOCK_SYMBOLS:
         try:
             ticker = yf.Ticker(symbol)
             info = ticker.info
-            stock_name = info.get("shortName", "N/A")
-            current_price = info.get("currentPrice", None)
-            previous_close = info.get("previousClose", None)
-            if current_price and previous_close:
-                change = current_price - previous_close
-                change_percent = (change / previous_close) * 100
-                stock_data.append({
-                    'shortName': stock_name,
-                    'regularMarketPrice': round(current_price),
-                    'regularMarketChange': round(change),
-                    'regularMarketChangePercent': f"{change_percent:.2f} %"
-                })
+            history = ticker.history(period="1d", interval="1m")
+            
+            if not history.empty:
+                stock_name = info.get("shortName", "N/A")
+                current_price = info.get("currentPrice", None)
+                previous_close = info.get("previousClose", None)
+                
+                if current_price and previous_close:
+                    change = current_price - previous_close
+                    change_percent = (change / previous_close) * 100
+                    stock_data.append({
+                        'symbol': symbol,
+                        'shortName': stock_name,
+                        'regularMarketPrice': round(current_price),
+                        'regularMarketChange': round(change),
+                        'regularMarketChangePercent': f"{change_percent:.2f} %",
+                        'history': {
+                            'timestamps': [ts.strftime('%Y-%m-%d %H:%M:%S') for ts in history.index],
+                            'prices': history['Close'].tolist(),
+                            'volumes': history['Volume'].tolist()
+                        }
+                    })
+                    logging.info(f"Data fetched for {symbol}")
+                else:
+                    logging.warning(f"No valid price data for {symbol}")
             else:
-                logging.warning(f"No valid data for {symbol}")
+                logging.warning(f"No history data for {symbol}")
+
         except Exception as e:
             logging.error(f"Error fetching data for {symbol}: {e}")
 
@@ -44,6 +59,13 @@ def fetch_kr_stock_data():
     except redis.ConnectionError as e:
         logging.error(f"Error connecting to Redis: {e}")
 
+def update_stock_data():
+    while True:
+        fetch_kr_stock_data()
+        time.sleep(10)  # 10초마다 데이터를 갱신합니다.
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    fetch_kr_stock_data()
+    updater_thread = threading.Thread(target=update_stock_data)
+    updater_thread.start()
+    updater_thread.join()  # 스레드가 종료되지 않도록 유지
