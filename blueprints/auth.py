@@ -3,7 +3,7 @@ import requests
 
 # 카카오 API 설정
 REST_API_KEY = "d37e3286aa4a1b7e3a2c084309f70d72"
-REDIRECT_URI = "http://127.0.0.1:8000/auth/kakaoLoginLogicRedirect"
+REDIRECT_URI = "http://127.0.0.1:5000/auth/kakaoLoginLogicRedirect"
 
 # 블루프린트 생성
 auth = Blueprint('auth', __name__)
@@ -75,7 +75,7 @@ def kakaoLoginLogicRedirect():
             'email': email
         }
 
-        return redirect("/home")  # 로그인 성공 후 홈으로 리다이렉트
+        return redirect("/stock_kr")  # 로그인 성공 후 홈으로 리다이렉트
     else:
         print("Access token 발급 실패:", response.json())
         return "Access token 발급 실패.", 500
