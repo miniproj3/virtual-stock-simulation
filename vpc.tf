@@ -108,3 +108,10 @@ resource "aws_route_table_association" "private_rtb_association" {
   route_table_id = aws_route_table.tf_rtb_pri.id
 }
 
+# RDS용 서브넷 그룹
+resource "aws_db_subnet_group" "tf_sub_group_db"{
+  subnet_ids = [aws_subnet.tf_sub_pri[4].id, aws_subnet.tf_sub_pri[5].id]
+  tags = {
+    Name = "tf_sub_group_db"
+  }
+}

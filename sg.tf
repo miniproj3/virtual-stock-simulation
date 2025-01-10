@@ -139,3 +139,27 @@ resource "aws_security_group" "tf_sg_nlb" {
     Name = "tf_sg_nlb"
   }
 }
+
+# RDS Security Group
+resource "aws_security_group" "tf_sg_rds" {
+  vpc_id = aws_vpc.tf_vpc.id
+
+  ingress {
+    from_port       = 3306 
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.tf_sg_was.id] 
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "tf_sg_rds"
+  }
+}
+

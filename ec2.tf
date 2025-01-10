@@ -56,7 +56,13 @@ resource "aws_launch_template" "tf_st_was" {
   instance_type = "t2.medium"
   # Auto Scaling Group 생성할 때, Subnet 선택 할 것 ! (시작 템플릿에서는 하나만 가능해서)
   vpc_security_group_ids = [aws_security_group.tf_sg_was.id]
-  user_data = filebase64("user-data-was.sh")
+  # Base64로 인코딩된 user_data
+  user_data = base64encode(templatefile("user-data-was.sh", {
+    RDS_ENDPOINT = aws_db_instance.tf_rds.endpoint,
+    DB_NAME      = aws_db_instance.tf_rds.db_name,
+    USERNAME     = aws_db_instance.tf_rds.username,
+    PASSWORD     = var.db_password
+  }))
   tags = {
     Name = "tf_st_was"
   }
