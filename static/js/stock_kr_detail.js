@@ -1,46 +1,127 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const ctx = document.getElementById('stockChart').getContext('2d');
+    const symbol = new URLSearchParams(window.location.search).get('symbol');
+    if (symbol) {
+        fetchStockDetail(symbol);
+        setInterval(() => fetchStockDetail(symbol), 5000);  // 5초마다 업데이트
+    }
+});
 
-    const stockChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [], // X축 레이블 (시간)
-            datasets: [{
-                label: 'Stock Price',
-                data: [], // 주식 가격 데이터
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'minute'
-                    }
-                }
+function fetchStockDetail(symbol) {
+    fetch('/stock_kr/get_stock_data')
+        .then(response => response.json())
+        .then(data => {
+            if (!Array.isArray(data)) {
+                throw new Error('Invalid stock data format: Expected an array');
             }
-        }
-    });
 
-    // 카프카로부터 실시간 데이터 수신
-    const eventSource = new EventSource('/stream');
-    eventSource.onmessage = function (event) {
-        const data = JSON.parse(event.data);
-        stockChart.data.labels.push(data.time);
-        stockChart.data.datasets[0].data.push(data.price);
-        stockChart.update();
+            const stock = data.find(item => item.symbol === symbol);
+            if (stock && stock.history) {
+                document.getElementById("stock-name").innerText = stock.shortName;
+                document.getElementById("stock-info").innerHTML = `
+                    현재 가격: <strong>${stock.regularMarketPrice.toLocaleString()} 원</strong>,
+                    변동: <span class="${stock.regularMarketChange > 0 ? 'change-percent-positive' : (stock.regularMarketChange < 0 ? 'change-percent-negative' : 'change-percent-0')}">
+                        ${stock.regularMarketChange > 0 ? '+' : ''}${stock.regularMarketChange.toLocaleString()} 원
+                    </span>,
+                    변동률: <span class="${stock.regularMarketChangePercent > 0 ? 'change-percent-positive' : (stock.regularMarketChangePercent < 0 ? 'change-percent-negative' : 'change-percent-0')}">
+                        ${parseFloat(stock.regularMarketChangePercent).toFixed(2)}%
+                    </span>
+                `;
+                initializeChart(stock.history);
+            } else {
+                console.error('Stock data or history missing for symbol:', symbol);
+                alert('Stock data or history missing. Please check');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching stock detail:', error);
+        });
+}
+
+function initializeChart(history) {
+    if (!history || !history.timestamps || !history.prices || !history.volumes) {
+        console.error('Invalid chart data');
+        return;
+    }
+
+    const timestamps = history.timestamps || [];
+    const prices = history.prices || [];
+    const volumes = history.volumes || [];
+
+    const trace1 = {
+        x: timestamps,
+        y: prices,
+        mode: 'lines+markers',
+        name: 'Price',
+        line: { color: 'rgb(75, 192, 192)' }
     };
 
-    // 매도, 매수 버튼 클릭 이벤트 처리
-    document.getElementById('buyButton').addEventListener('click', () => {
-        // 매수 로직 추가
-        alert('Buy button clicked');
-    });
+    const trace2 = {
+        x: timestamps,
+        y: volumes,
+        mode: 'lines',
+        name: 'Volume',
+        yaxis: 'y2',
+        line: { color: 'rgb(192, 75, 75)' }
+    };
 
-    document.getElementById('sellButton').addEventListener('click', () => {
-        // 매도 로직 추가
-        alert('Sell button clicked');
-    });
-});
+    const layout = {
+        title: '주식 가격 및 거래량',
+        xaxis: {
+            type: 'date',
+            title: '시간'
+        },
+        yaxis: {
+            title: '가격'
+        },
+        yaxis2: {
+            title: '거래량',
+            overlaying: 'y',
+            side: 'right'
+        }
+    };
+
+    const data = [trace1, trace2];
+    Plotly.newPlot('chart', data, layout);
+}
+
+setInterval(function () {
+    const symbol = new URLSearchParams(window.location.search).get('symbol');
+    if (symbol) {
+        updateChart(symbol);
+    }
+}, 10000);  // 10초마다 데이터 업데이트
+
+function updateChart(symbol) {
+    fetch('/stock_kr/get_stock_data')
+        .then(response => response.json())
+        .then(data => {
+            const stock = data.find(item => item.symbol === symbol);
+            if (stock && stock.history) {
+                const timestamps = stock.history.timestamps || [];
+                const prices = stock.history.prices || [];
+                const volumes = stock.history.volumes || [];
+
+                Plotly.react('chart', [
+                    {
+                        x: timestamps,
+                        y: prices,
+                        mode: 'lines+markers',
+                        name: 'Price',
+                        line: { color: 'rgb(75, 192, 192)' }
+                    },
+                    {
+                        x: timestamps,
+                        y: volumes,
+                        mode: 'lines',
+                        name: 'Volume',
+                        yaxis: 'y2',
+                        line: { color: 'rgb(192, 75, 75)' }
+                    }
+                ]);
+            } else {
+                console.error('Stock data or history missing for symbol:', symbol);
+                alert('Stock data or history missing. Please check');
+            }
+        })
+        .catch(error => console.error('Error updating chart data:', error));
+}

@@ -1,18 +1,44 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Detail</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="stock_kr_detail.js"></script>
+    <title>{{ stock_name }} - 주식 상세 정보</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stock_kr_detail.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
+
 <body>
-    <h1>Stock Detail</h1>
-    <canvas id="stockChart"></canvas>
-    <div>
-        <button id="buyButton">Buy</button>
-        <button id="sellButton">Sell</button>
+    <div class="container">
+        <!-- 상단 헤더 -->
+        <div class="header">
+            <h1 id="stock-name">{{ stock_name }}</h1>
+            <p id="stock-info" style="font-size: 18px; color: #00796b; margin-top: 10px;"></p> <!-- 한 줄 출력 -->
+        </div>
+        <div class="main-content">
+            <!-- 주식 차트 섹션 -->
+            <div class="chart-section">
+                <div id="chart"></div> <!-- 차트 화면 요소 -->
+            </div>
+            <!-- 매수/매도 섹션 -->
+            <div class="order-section">
+                <div class="buy-sell">
+                    <h2>매수/매도 주문</h2>
+                    <form id="buy-form">
+                        <label for="buy-amount">수량:</label>
+                        <input type="number" id="buy-amount" name="amount" min="1" required>
+                        <button type="submit">매수</button>
+                    </form>
+                    <form id="sell-form">
+                        <label for="sell-amount">수량:</label>
+                        <input type="number" id="sell-amount" name="amount" min="1" required>
+                        <button type="submit">매도</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
+<script src="{{ url_for('static', filename='js/stock_kr_detail.js') }}"></script>
 </html>

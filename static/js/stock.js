@@ -4,22 +4,17 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function fetchStockData() {
-    console.log('Fetching stock data...');
     fetch('/stock_kr/get_stock_data')
         .then(response => response.json())
         .then(data => {
-            console.log('Received data:', data);
             if (data.length > 0) {
-                console.log('Stock Data:', data);
                 renderStockData(data);
             } else {
                 console.error('No valid stock data available');
-                alert('주식 데이터를 불러오는 데 실패했습니다.');
             }
         })
         .catch(error => {
             console.error('Error fetching stock data:', error);
-            alert('서버에서 데이터를 가져오는 중 문제가 발생했습니다.');
         });
 }
 
@@ -44,8 +39,6 @@ function renderStockData(stockData) {
             changeClass = 'change-percent-negative'; // 하락
         }
 
-        const changePercent = parseFloat(stock.regularMarketChangePercent);
-
         stockRow.innerHTML = `
             <td><a href="#" class="stock-link" data-symbol="${stock.symbol}">${stock.shortName}</a></td>
             <td class="${changeClass}"><strong>${stock.regularMarketPrice.toLocaleString()} KRW</strong></td>
@@ -53,7 +46,7 @@ function renderStockData(stockData) {
                 ${stock.regularMarketChange > 0 ? '+' : ''}${stock.regularMarketChange.toLocaleString()} KRW
             </td>
             <td class="change ${changeClass}">
-                ${changePercent.toFixed(2)}%
+                ${parseFloat(stock.regularMarketChangePercent).toFixed(2)}%
             </td>
         `;
 
@@ -78,6 +71,6 @@ function openStockPopup(symbol) {
         return;
     }
     const popupUrl = `/stock_kr_detail/stock_detail?symbol=${symbol}`;
-    const popupOptions = "width=800,height=600,scrollbars=yes,resizable=yes";
+    const popupOptions = "width=1200,height=800,scrollbars=yes,resizable=yes";
     window.open(popupUrl, "StockPopup", popupOptions);
 }

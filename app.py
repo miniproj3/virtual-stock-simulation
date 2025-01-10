@@ -59,7 +59,7 @@ def create_app(config_name):
             session['username'] = user.username
             session['seed_krw'] = user.seed_krw
             session['seed_usd'] = user.seed_usd
-            return render_template('auth.html', user=user)
+            return render_template('stock_kr.html', user=user)
         else:
             return "User not found", 404
 
