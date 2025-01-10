@@ -78,6 +78,7 @@ table td {
     background-color: #fff;
 }
 
+/* 기존 스타일 */
 a {
     display: inline-block;
     margin-top: 20px;
@@ -88,6 +89,26 @@ a {
     border-radius: 4px;
     transition: background-color 0.3s;
 }
+
+a:hover {
+    background-color: #1c2a38;
+}
+
+/* 새로운 스타일 */
+a.stock-link {
+    background-color: transparent;
+    color: #2d3e50;
+    padding: 0;
+    margin: 0;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+a.stock-link:hover {
+    color: #1c2a38;
+}
+
 
 a:hover {
     background-color: #1c2a38;

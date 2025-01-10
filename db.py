@@ -8,19 +8,21 @@ pymysql.install_as_MySQLdb()
 db = SQLAlchemy()
 
 def init_app(app):
-    # MySQL RDS 설정
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin001:admin001@testdb001.caruphjxuyij.ap-northeast-2.rds.amazonaws.com/testdb001'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # MySQL RDS 설정은 config.py에서 관리
+    app.config['SQLALCHEMY_POOL_SIZE'] = 10  # 연결 풀 크기 설정
+    app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30  # 풀 타임아웃 설정
+    app.config['SQLALCHEMY_POOL_RECYCLE'] = 1800  # 연결 재사용 시간 설정 (초)
     db.init_app(app)
 
     # 데이터베이스 존재 여부 확인 및 생성
-    engine = create_engine('mysql+pymysql://admin001:admin001@testdb001.caruphjxuyij.ap-northeast-2.rds.amazonaws.com')
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+    db_name = app.config['SQLALCHEMY_DATABASE_URI'].rsplit('/', 1)[-1]
     with engine.connect() as connection:
         try:
-            connection.execute(text("USE testdb001"))
+            connection.execute(text(f"USE {db_name}"))
         except OperationalError:
-            connection.execute(text("CREATE DATABASE testdb001"))
-            connection.execute(text("USE testdb001"))
+            connection.execute(text(f"CREATE DATABASE {db_name}"))
+            connection.execute(text(f"USE {db_name}"))
 
 # 사용자
 class User(db.Model):

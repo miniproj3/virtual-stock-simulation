@@ -1,9 +1,10 @@
-version: '3'
 services:
   zookeeper:
     image: wurstmeister/zookeeper:latest
     ports:
       - "2181:2181"
+    networks:
+      - kafka_network
   kafka:
     image: wurstmeister/kafka:latest
     ports:
@@ -13,3 +14,9 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_BROKER_ID: 1
+    networks:
+      - kafka_network
+
+networks:
+  kafka_network:
+    driver: bridge
