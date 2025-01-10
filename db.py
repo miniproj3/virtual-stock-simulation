@@ -37,22 +37,11 @@ class User(db.Model):
 
     # 관계 설정
     portfolios = db.relationship('Portfolio', backref='owner', lazy=True)
-    transactions = db.relationship('StockTransaction', backref='owner', lazy=True)
+    orders = db.relationship('Order', backref='user_orders', lazy=True)  # Change here
     exchanges = db.relationship('Exchange', backref='owner', lazy=True)
 
-# # 시드머니 기록
-# class SeedMoney(db.Model):
-#     __tablename__ = 'seed_money'
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-#     seed_krw = db.Column(db.Float, default=0.0)
-#     seed_usd = db.Column(db.Float, default=0.0)
-#     granted_date = db.Column(db.DateTime, default=db.func.now())
-#     reset_date = db.Column(db.DateTime, nullable=True)
-#     status = db.Column(db.Enum('GRANTED', 'RESET', name='status_enum'), nullable=False)
-
-# 주식 정보
+# 주식 정보 Column 수정하기 kr us
 class Stock(db.Model):
     __tablename__ = 'stocks'
 
@@ -72,18 +61,24 @@ class Portfolio(db.Model):
     stock_amount = db.Column(db.Float, default=0.0)
     total_value = db.Column(db.Float, default=0.0)
 
-# 거래 기록
-class StockTransaction(db.Model):
-    __tablename__ = 'stock_transactions'
+# 주문 기록-stocktransaction 삭제
+class Order(db.Model):
+    __tablename__ = 'orders'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     stock_id = db.Column(db.Integer, db.ForeignKey('stocks.id'), nullable=False)
-    transaction_type = db.Column(db.Enum('BUY', 'SELL', name='transaction_type_enum'), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-    price_per_unit = db.Column(db.Float, nullable=False)
-    total_value = db.Column(db.Float, nullable=False)
-    transaction_date = db.Column(db.DateTime, default=db.func.now())
+    order_type = db.Column(db.Enum('BUY', 'SELL', name='order_type_enum'), nullable=False)  # 주문 타입 (매수/매도)
+    target_price = db.Column(db.Float, nullable=False)  # 목표 가격
+    quantity = db.Column(db.Integer, nullable=False)  # 주문 수량
+    status = db.Column(db.Enum('PENDING', 'COMPLETED', name='order_status_enum'), default='PENDING')  # 주문 상태
+    created_at = db.Column(db.DateTime, default=db.func.now())  # 주문 생성 시간
+    completed_at = db.Column(db.DateTime, nullable=True)  # 주문 완료 시간
+
+    # 관계 설정
+    user = db.relationship('User', backref=db.backref('user-orders', lazy=True))
+    stock = db.relationship('Stock', backref=db.backref('orders', lazy=True))
+
 
 # 환전 기록
 class Exchange(db.Model):
