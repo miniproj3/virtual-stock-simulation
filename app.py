@@ -7,6 +7,7 @@ from blueprints.auth import auth
 from blueprints.stock_kr_detail import stock_kr_detail  # 추가된 부분
 from blueprints.exchange import exchange
 from blueprints.mypage import mypage
+from blueprints.trade_api import trade_api
 import threading
 from kafka.kafka_consume import consume_stock_data
 from confluent_kafka.admin import AdminClient, NewTopic
@@ -14,6 +15,7 @@ from kafka.kafka_config import KAFKA_BROKER, KAFKA_TOPIC
 import kafka.data_preloader as data_preloader
 import logging
 from logging.handlers import RotatingFileHandler
+from blueprints.trade_api import start_order_processing_thread
 from config import config  
 
 # 로깅 설정
@@ -51,6 +53,7 @@ def create_app(config_name):
     app.register_blueprint(exchange, url_prefix='/exchange')
     app.register_blueprint(mypage, url_prefix='/mypage')
     app.register_blueprint(auth, url_prefix='/auth')
+    app.register_blueprint(trade_api, url_prefix='/api')
 
     @app.route('/')
     def main():
@@ -95,6 +98,8 @@ if __name__ == "__main__":
 
     # Kafka Consumer를 백그라운드에서 실행
     start_kafka_consumer()
+    
+    start_order_processing_thread(app)
 
     # Flask 애플리케이션 실행
     app.run(host="0.0.0.0", port=5000, debug=True)
