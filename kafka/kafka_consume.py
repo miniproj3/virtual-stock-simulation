@@ -125,4 +125,3 @@ def start_kafka_consumer():
     
     consumer_thread_stock.start()
     consumer_thread_chart.start()
-
