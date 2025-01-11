@@ -57,8 +57,9 @@ def create_app(config_name):
 
     @app.route('/')
     def main():
-        user = User.query.filter_by(username='testuser').first()
+        user = User.query.filter_by(id=1).first()  # user_id=1로 조회
         if user:
+            session['user_id'] = user.id  # 세션에 user_id 저장
             session['username'] = user.username
             session['seed_krw'] = user.seed_krw
             session['seed_usd'] = user.seed_usd
