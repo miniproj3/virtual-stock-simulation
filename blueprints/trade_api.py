@@ -99,6 +99,8 @@ def register_process_order_thread(app):
 @trade_api.route('/order', methods=['POST'])
 def place_order():
     data = request.json
+    print("[DEBUG] Received order data:", data)  # 디버깅 추가
+
     user_id = data.get('user_id')
     stock_symbol = data.get('stock_symbol')
     order_type = data.get('order_type')  # 'BUY' 또는 'SELL'
@@ -106,13 +108,15 @@ def place_order():
     quantity = data.get('quantity')
 
     try:
-        # 유효성 검사
         user = User.query.get(user_id)
         stock = Stock.query.filter_by(stock_symbol=stock_symbol).first()
+
+        print("[DEBUG] User found:", user)  # 디버깅 추가
+        print("[DEBUG] Stock found:", stock)  # 디버깅 추가
+
         if not user or not stock:
             return jsonify({"error": "Invalid user or stock"}), 400
 
-        # 주문 생성
         new_order = Order(
             user_id=user_id,
             stock_id=stock.id,
@@ -122,7 +126,7 @@ def place_order():
         )
         db.session.add(new_order)
         db.session.commit()
-        print(f"[INFO] New order created: ID {new_order.id}, Type {order_type}, Target Price {target_price}, Quantity {quantity}")
+        print("[INFO] New order created: ID", new_order.id)
 
         return jsonify({"message": "Order placed successfully"}), 200
 
