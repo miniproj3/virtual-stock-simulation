@@ -1,0 +1,16 @@
+flask
+flask[async]
+flask-sqlalchemy
+flask-login
+werkzeug
+yfinance
+alpha_vantage
+flask-session
+pymysql
+confluent-kafka
+kafka-python
+plotly
+finance-datareader
+redis
+aiohttp
+lamda

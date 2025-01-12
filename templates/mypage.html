@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>가상 주식 시뮬레이션</h1>
+            <p>{{ user.kakao_id }}님의 마이페이지</p>
+            <nav class="navbar">
+                <a href="/stock_kr">홈</a>
+                <a href="/exchange">환전하기</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="user-info">
+            <h2>{{ user.kakao_id }}</h2>
+            <p><strong>보유 원화:</strong> {{ "{:,.0f}".format(user.seed_krw) }} KRW</p>
+            <p><strong>보유 달러:</strong> {{ "{:,.2f}".format(user.seed_usd) }} USD</p>
+        </div>
+        <div class="order-history">
+            <h2>주문 내역</h2>
+            {% if orders %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>주식 이름</th>
+                            <th>주문 종류</th>
+                            <th>주문 가격</th>
+                            <th>수량</th>
+                            <th>상태</th>
+                            <th>주문일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td>{{ order.stock.stock_name }}</td> <!-- 주식 이름 -->
+                                <td>{{ order.order_type }}</td> <!-- 주문 종류 (매수/매도) -->
+                                <td>{{ "{:,.0f}".format(order.target_price) if order.target_price is not none else 'N/A' }} KRW</td> <!-- 주문 가격 -->
+                                <td>{{ order.quantity }}</td> <!-- 수량 -->
+                                <td>{{ order.status }}</td> <!-- 주문 상태 -->
+                                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td> <!-- 주문일 -->
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>주문 내역이 없습니다.</p>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>
