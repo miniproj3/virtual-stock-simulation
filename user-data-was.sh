@@ -1,76 +1,59 @@
 #!/bin/bash
+# 필수 패키지 설치 및 서비스 활성화
 yum update -y
-yum install -y docker
+yum install -y docker redis
 systemctl start docker
 systemctl enable docker
+sudo yum install git -y
+sudo amazon-linux-extras enable epel
+sudo amazon-linux-extras enable redis6
+sudo yum install -y redis
+sudo systemctl start redis
+sudo systemctl enable redis
 
-# 작업 디렉토리 생성 및 권한 설정
+
+# WAS 작업 디렉토리 생성 및 Git 클론
 mkdir -p /home/ec2-user/wasapp
 cd /home/ec2-user/wasapp
 chown -R ec2-user:ec2-user /home/ec2-user/wasapp
+git clone -b 0112 https://github.com/miniproj3/virtual-stock-simulation.git
+cd virtual-stock-simulation
 
-# FastAPI 백엔드 앱 생성
-cat << 'EOF' > app.py
-from fastapi import FastAPI
-import mysql.connector
-import uvicorn
-from pydantic import BaseModel
-
-app = FastAPI()
-
-class Data(BaseModel):
-    name: str
-    value: str
-
-@app.post("/data")
-async def save_data(data: Data):
-    try:
-        conn = mysql.connector.connect(
-            host="${RDS_ENDPOINT}".split(':')[0],
-            user="${USERNAME}",
-            password="${PASSWORD}",
-            database="${DB_NAME}"
-        )
-        cursor = conn.cursor()
-        
-        # 테이블이 없다면 생성
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_data (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255),
-                value VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # 데이터 삽입
-        cursor.execute(
-            "INSERT INTO user_data (name, value) VALUES (%s, %s)",
-            (data.name, data.value)
-        )
-        conn.commit()
-        
-        return {"status": "success", "message": "Data saved successfully"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-    finally:
-        if 'conn' in locals():
-            conn.close()
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+# 환경 변수 파일 생성
+cat << EOF > .env
+RDS_ENDPOINT="${RDS_ENDPOINT}"
+DB_NAME="${DB_NAME}"
+DB_USERNAME="${USERNAME}"
+DB_PASSWORD="${PASSWORD}"
+NLB_DNS_NAME="${NLB_DNS_NAME}"
+DATABASE_URL="mysql+pymysql://${USERNAME}:${PASSWORD}@${RDS_ENDPOINT}/${DB_NAME}"
+REDIRECT_URI="http://${ALB_DNS_NAME}/auth/kakaoLoginLogicRedirect"
 EOF
 
-# Dockerfile 생성
+#Kafka 설정 파일 수정 (localhost -> NLB_DNS_NAME)
+sed -i "s/localhost/${NLB_DNS_NAME}/g" kafka/docker-compose.yml
+sed -i "s/localhost:9092/${NLB_DNS_NAME}:9092/g" kafka/kafka_config.py
+
+# Kafka Docker Compose 실행
+cd kafka
+docker-compose up -d
+cd ..
+
+# Gunicorn Flask 애플리케이션을 위한 Dockerfile 생성
 cat << 'EOF' > Dockerfile
 FROM python:3.9-slim
+
 WORKDIR /app
-COPY app.py /app/
-RUN pip install fastapi uvicorn mysql-connector-python
-CMD ["python", "app.py"]
+COPY . .
+
+RUN apt-get update && apt-get install -y python3-pip
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install gunicorn
+
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "app:app"]
 EOF
 
-# Docker 이미지 빌드 및 실행 (ec2-user 권한으로)
-chown -R ec2-user:ec2-user .
-docker build -t wasapp .
-docker run -d --name wasapp -p 5000:5000 wasapp
+# Flask 애플리케이션 Docker 컨테이너 빌드 및 실행
+docker build -t was-flask .
+docker run -d --name was-flask -p 5000:5000 --env-file .env was-flask
+

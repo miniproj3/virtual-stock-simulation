@@ -42,14 +42,6 @@ resource "aws_lb_target_group" "tf_tg_web" {
   }
 }
 
-# Register Web Instances to Target Group
-resource "aws_lb_target_group_attachment" "web_attachment" {
-  count            = 2
-  target_group_arn = aws_lb_target_group.tf_tg_web.arn
-  target_id        = aws_instance.tf_web[count.index].id
-  port             = 8080
-}
-
 # Network Load Balancer (NLB)
 resource "aws_lb" "tf_nlb" {
   internal           = true
