@@ -15,7 +15,10 @@ producer = get_producer()
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
 
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+# Redis 설정
+redis_host = os.getenv('REDIS_HOST', 'redis')
+redis_port = int(os.getenv('REDIS_PORT', 6379))
+redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=0)
 
 stock_data_cache = []
 

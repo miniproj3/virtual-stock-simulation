@@ -8,7 +8,7 @@ import os
 
 # 카카오 API 설정
 REST_API_KEY = "d37e3286aa4a1b7e3a2c084309f70d72"
-REDIRECT_URI = os.environ.get("REDIRECT_URI", "http://127.0.0.1:5000/auth/kakaoLoginLogicRedirect")
+REDIRECT_URI = os.environ.get("REDIRECT_URI")
 
 auth = Blueprint('auth', __name__)
 

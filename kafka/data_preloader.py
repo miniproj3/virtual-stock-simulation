@@ -1,3 +1,4 @@
+import os
 import yfinance as yf
 import logging
 import json
@@ -6,7 +7,9 @@ import threading
 import time
 
 # Redis 설정
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+redis_host = os.getenv('REDIS_HOST', 'redis')
+redis_port = int(os.getenv('REDIS_PORT', 6379))
+redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=0)
 
 # 주식 심볼 리스트
 STOCK_SYMBOLS = [

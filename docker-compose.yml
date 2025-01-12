@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka_network
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"
+    deploy:
+      resources:
+        limits:
+          memory: 1g  # 메모리 제한
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${PUBLIC_IP}:9092
+      - KAFKA_HEAP_OPTS=-Xms256m -Xmx512m
+      - KAFKA_BROKER_ID=1
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka_network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks: 
+      - kafka_network
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+      - redis
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=mysql+pymysql://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME
+      - PUBLIC_IP=$PUBLIC_IP
+      - REDIRECT_URI=http://$PUBLIC_IP:8080/auth/kakaoLoginLogicRedirect
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - kafka_network
+
+networks:
+  kafka_network:
+    driver: bridge
