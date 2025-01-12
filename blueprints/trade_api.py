@@ -1,7 +1,7 @@
 import threading
 import time
 from datetime import datetime
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, app, request, jsonify, render_template
 from db import db, User, Stock, Portfolio, Order
 from sqlalchemy.exc import SQLAlchemyError
 
