@@ -29,22 +29,14 @@
                         <label for="buy-amount">수량:</label>
                         <input type="number" id="buy-amount" name="amount" min="1" required>
                         <label for="buy-price">목표 가격:</label>
-<<<<<<< HEAD
                         <input type="number" id="buy-price" name="target_price" step="0.01" required>
-=======
-                        <input type="number" id="buy-price" name="price" step="0.01" required>
->>>>>>> 17b07bf2a76299b349a0cc91a67803d826858b35
                         <button type="submit">매수</button>
                     </form>
                     <form id="sell-form" onsubmit="submitOrder(event, 'SELL')">
                         <label for="sell-amount">수량:</label>
                         <input type="number" id="sell-amount" name="amount" min="1" required>
                         <label for="sell-price">목표 가격:</label>
-<<<<<<< HEAD
                         <input type="number" id="sell-price" name="target_price" step="0.01" required>
-=======
-                        <input type="number" id="sell-price" name="price" step="0.01" required>
->>>>>>> 17b07bf2a76299b349a0cc91a67803d826858b35
                         <button type="submit">매도</button>
                     </form>
                 </div>
@@ -52,7 +44,6 @@
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- 세션에서 가져온 user.id를 HTML에 포함 -->
     <script>
         const userId = "{{ user['id'] }}"; // 템플릿 변수로 변경
@@ -60,13 +51,4 @@
         sessionStorage.setItem('user-id', userId); // 세션 스토리지에 사용자 ID 저장
     </script>
 </body>
-=======
-    <!-- 세션에서 가져온 user_id를 HTML에 포함 -->
-    <script>
-        const userId = {{ session.get('user_id') | tojson }};
-        console.log("[DEBUG] User ID from session:", userId);
-    </script>
-</body>
-
->>>>>>> 17b07bf2a76299b349a0cc91a67803d826858b35
 </html>
