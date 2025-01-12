@@ -98,4 +98,4 @@ if __name__ == "__main__":
     start_background_tasks(app)
 
     # Flask 애플리케이션 실행
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)
