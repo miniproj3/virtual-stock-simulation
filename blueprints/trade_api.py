@@ -138,21 +138,12 @@ def place_order():
         user = User.query.get(user_id)
         stock = Stock.query.filter_by(stock_symbol=stock_symbol).first()
 
-<<<<<<< HEAD
-=======
-        print("[DEBUG] User found:", user)  # 디버깅 추가
-        print("[DEBUG] Stock found:", stock)  # 디버깅 추가
-
->>>>>>> 17b07bf2a76299b349a0cc91a67803d826858b35
         if not user or not stock:
             print("[DEBUG] Invalid user or stock.")
             return jsonify({"error": "Invalid user or stock"}), 400
 
-<<<<<<< HEAD
         current_price = stock.current_price
 
-=======
->>>>>>> 17b07bf2a76299b349a0cc91a67803d826858b35
         new_order = Order(
             user_id=user_id,
             stock_id=stock.id,
@@ -162,10 +153,6 @@ def place_order():
         )
         db.session.add(new_order)
         db.session.commit()
-<<<<<<< HEAD
-=======
-        print("[INFO] New order created: ID", new_order.id)
->>>>>>> 17b07bf2a76299b349a0cc91a67803d826858b35
 
         print(f"[INFO] New order created: ID {new_order.id}, Type {order_type}, Target Price {target_price}, Quantity {quantity}, Current Price {current_price}")
         return jsonify({"message": "Order placed successfully"}), 200
