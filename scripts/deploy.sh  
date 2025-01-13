@@ -1,0 +1,5 @@
+#!/bin/bash
+kubectl apply -f k8s/secrets/
+kubectl apply -f k8s/redis/
+kubectl apply -f k8s/kafka/
+kubectl apply -f k8s/flask-app/

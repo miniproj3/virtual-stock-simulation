@@ -1,0 +1,12 @@
+admin = "admin"
+testpass = "testpass"
+vssDB = "vssDB"
+rds_host = "ENTER_YOUR_RDS_HOST_HERE"
+runtime = "python3.9"
+vsss3 = "vsss3"
+region = "ap-northeast-2"
+
+cidr_ingress_1 = "0.0.0.0/0"
+cidr_ingress_2 = "0.0.0.0/0"
+cidr_ingress_3 = "0.0.0.0/0"
+cidr_egress    = "0.0.0.0/0"
