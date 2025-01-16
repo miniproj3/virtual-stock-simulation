@@ -11,7 +11,6 @@ producer = Producer({
 def get_producer():
     return producer
 
-# 주식 데이터 전송 함수 추가
 def send_stock_data(stock_data):
     producer.produce(KAFKA_TOPIC, key=str(stock_data['symbol']), value=json.dumps(stock_data))
     producer.flush()

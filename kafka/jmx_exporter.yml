@@ -1,0 +1,19 @@
+---
+start:
+  delay: 0
+  port: 7071
+rules:
+  - pattern: kafka<type=(.+), name=(.+)><>(Count|Value|Min|Max|Mean|Percentiles|Median|75thPercentile|95thPercentile|98thPercentile|99thPercentile|999thPercentile|Rate)
+    name: kafka_$1_$2_$3
+    type: GAUGE
+    labels:
+      - kafka
+      - jmx
+
+  - pattern: kafka.server<type=BrokerTopicMetrics, name=(.+)>
+    name: kafka_server_$1
+    type: GAUGE
+    labels:
+      - kafka
+      - server
+---

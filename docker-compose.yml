@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   zookeeper:
@@ -10,25 +10,26 @@ services:
 
   kafka:
     image: wurstmeister/kafka:latest
+    depends_on:
+      - zookeeper
     ports:
       - "9092:9092"
-    deploy:
-      resources:
-        limits:
-          memory: 1g  # 메모리 제한
+      - "7071:7071"  # 추가: JMX Exporter 포트
     environment:
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${PUBLIC_IP}:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_HEAP_OPTS=-Xms256m -Xmx512m
       - KAFKA_BROKER_ID=1
-    depends_on:
-      - zookeeper
+      - KAFKA_JMX_PORT=7071  # 추가: JMX 포트 설정
+      - JMX_EXPORTER_ENABLED=true
+      - JMX_EXPORTER_PORT=7071
     networks:
       - kafka_network
+    command: ["sh", "-c", "export KAFKA_JMX_PORT=7071 && exec /usr/bin/start-kafka.sh"]  # 카프카 JMX 포트 설정
 
   redis:
-    image: redis:latest
+    image: redis:latest 
     ports:
       - "6379:6379"
     networks: 
@@ -43,11 +44,28 @@ services:
       - redis
     environment:
       - FLASK_ENV=production
-      - DATABASE_URL=mysql+pymysql://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME
-      - PUBLIC_IP=$PUBLIC_IP
-      - REDIRECT_URI=http://$PUBLIC_IP:8080/auth/kakaoLoginLogicRedirect
+      - DATABASE_URL=mysql+pymysql://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}
+      - PUBLIC_IP=${PUBLIC_IP}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+    networks:
+      - kafka_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"  # 변경: expose에서 ports로 변경
+    networks:
+      - kafka_network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"  # 변경: expose에서 ports로 변경
+    depends_on:
+      - prometheus
     networks:
       - kafka_network
 
