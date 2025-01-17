@@ -1,11 +1,32 @@
 import threading
 import time
 from datetime import datetime
+import redis
+import os
+import json
 from flask import Blueprint, app, request, jsonify, render_template
 from db import db, User, Stock, Portfolio, Order
 from sqlalchemy.exc import SQLAlchemyError
 
 trade_api = Blueprint('trade_api', __name__)
+
+# Redis 설정
+redis_host = os.getenv('REDIS_HOST', 'redis')
+redis_port = int(os.getenv('REDIS_PORT', 6379))
+redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=0)
+
+stock_data_cache = []
+
+def get_live_price_from_redis(symbol):
+    """Redis에서 특정 주식의 현재 가격을 가져오는 함수"""
+    try:
+        stock_data_cache = json.loads(redis_client.get('kr_stock_data') or '[]')
+        for stock in stock_data_cache:
+            if stock['symbol'] == symbol:
+                return stock.get('regularMarketPrice')
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch live price from Redis: {e}")
+    return None
 
 # 주문 처리 함수
 def process_orders(app):
@@ -13,6 +34,7 @@ def process_orders(app):
     while True:
         try:
             print("[DEBUG] Starting order processing...")
+            
 
             # 애플리케이션 컨텍스트를 명확히 설정
             with app.app_context():
@@ -26,10 +48,20 @@ def process_orders(app):
                         print(f"[WARNING] Stock ID {order.stock_id} not found for Order ID {order.id}.")
                         continue
 
+                    # Redis에서 현재 가격 가져오기
+                    live_price = get_live_price_from_redis(stock.stock_symbol)
+                    if live_price is not None:
+                        stock.current_price = live_price
+                        db.session.commit()  # DB의 현재 가격 업데이트
+                        print(f"[INFO] Updated current price for Stock Symbol: {stock.stock_symbol} to {live_price}.")
+                    else:
+                        print(f"[WARNING] Live price not found for Stock Symbol: {stock.stock_symbol}. Skipping order.")
+                        continue
+
                     print(f"[DEBUG] Processing Order ID: {order.id}, Type: {order.order_type}, "
                           f"Target Price: {order.target_price}, Stock Symbol: {stock.stock_symbol}, "
                           f"Current Price: {stock.current_price}.")
-                    
+
                     # 매수 조건 확인
                     if order.order_type == 'BUY' and stock.current_price <= order.target_price:
                         portfolio = Portfolio.query.filter_by(user_id=order.user_id, stock_id=order.stock_id).first()
